@@ -2,7 +2,7 @@ import streamlit as st
 
 # 網頁基本設定
 st.set_page_config(page_title="Foodie Pricing", layout="wide")
-st.title("🇸🇬 Foodie Pricing")
+st.title("Foodie Pricing")
 
 # --- 第一部分：參數調節區 (左側邊欄) ---
 st.sidebar.header("⚙️ 全域參數設定")
