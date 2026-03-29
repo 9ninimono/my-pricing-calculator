@@ -2,7 +2,7 @@ import streamlit as st
 
 # 網頁基本設定
 st.set_page_config(page_title="Foodie Pricing", layout="wide")
-st.title("Foodie Pricing")
+st.title("🇸🇬 Foodie Pricing")
 
 # --- 第一部分：參數調節區 (左側邊欄) ---
 st.sidebar.header("⚙️ 全域參數設定")
@@ -66,4 +66,17 @@ if denominator > 0:
     # 顯示主要數據
     res1, res2, res3 = st.columns(3)
     with res1:
-        st.success(f"### 🎯 建議售價 (SP)\n##
+# 顯示主要數據 (修正後的區塊)
+    res1, res2, res3 = st.columns(3)
+    with res1:
+        st.success(f"### 🎯 建議售價 (SP)\n## {sp_sgd:.2f} SGD")
+        st.write(f"約合台幣：{sp_sgd * exchange_rate:.0f} TWD")
+    
+    with res2:
+        st.info(f"### 💵 到手金額 (Payout)\n## {payout_sgd:.2f} SGD")
+        st.caption("已扣除平台抽成")
+
+    with res3:
+        st.warning(f"### 📈 利潤率分析")
+        st.write(f"純利潤率：**{profit_rate:.1f}%**")
+        st.write(f"到手利潤率：**{payout_profit_rate:.1f}%**")
