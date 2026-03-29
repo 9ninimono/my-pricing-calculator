@@ -11,7 +11,7 @@ shipping_gap = st.sidebar.number_input("賣家負擔運費差額 (SGD)", value=2
 exchange_rate = st.sidebar.slider("匯率 (TWD/SGD)", 20.0, 26.0, 23.5)
 
 # --- 主畫面：輸入區 ---
-tab1, tab2 = st.tabs(["🚀 售價逆推 (我要標多少錢？)", "📝 帳單回測 (為什麼這單拿這麼少？)"])
+tab1, tab2 = st.tabs(["🚀 售價逆推 (我要標多少錢？)", "📝 帳單回測"])
 
 with tab1:
     col1, col2 = st.columns(2)
