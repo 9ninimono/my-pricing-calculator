@@ -1,7 +1,7 @@
 import streamlit as st
 
 # 1. 網頁基本設定
-st.set_page_config(page_title="Foodie Pricing Calculator 🍔", layout="wide")
+st.set_page_config(page_title="Foodie Pricing Calculator 🍔具", layout="wide")
 st.title("Foodie Pricing Calculator 🍔")
 
 # --- 第一部分：側邊欄參數調節 (全域共用) ---
@@ -21,6 +21,7 @@ else:
 # --- 第二部分：功能切換頁籤 ---
 tab1, tab2 = st.tabs(["🚀 售價逆推 (我要標多少？)", "📝 帳單回測 (這單賺多少？)"])
 
+# === Tab 1: 售價逆推功能 ===
 with tab1:
     col1, col2 = st.columns(2)
     with col1:
@@ -29,29 +30,12 @@ with tab1:
         t1_weight = st.number_input("商品重量 (kg)", value=0.5, key="t1_w")
         t1_cost_sgd = t1_cost_twd / exchange_rate
         t1_ship_sgd = t1_weight * shipping_rate_per_kg
+        st.write(f"折合成本：{t1_cost_sgd:.2f} SGD | 運費：{t1_ship_sgd:.2f} SGD")
+        
     with col2:
         st.subheader("💰 目標設定")
         t1_misc = st.number_input("雜項/包材 (SGD)", value=0.5, key="t1_m")
         t1_target = st.slider("期望純利潤率 (%)", 5, 50, 20, key="t1_target") / 100
 
     st.divider()
-    t1_total_c = t1_cost_sgd + t1_ship_sgd + t1_misc + shipping_gap_global
-    t1_denom = 1 - fee_rate - t1_target
-    
-    if t1_denom > 0:
-        t1_sp = t1_total_c / t1_denom
-        t1_fee = t1_sp * fee_rate
-        t1_payout = t1_sp - t1_fee - shipping_gap_global
-        
-        r1, r2, r3 = st.columns(3)
-        r1.success(f"### 🎯 建議售價\n## {t1_sp:.2f} SGD")
-        r2.info(f"### 💵 預估撥款\n## {t1_payout:.2f} SGD")
-        
-        t1_p_rate = t1_target * 100
-        t1_payout_rate = ((t1_payout - (t1_cost_sgd + t1_ship_sgd + t1_misc)) / t1_payout * 100) if t1_payout > 0 else 0
-        r3.warning(f"### 📈 利潤分析\n純利潤率：**{t1_p_rate:.1f}%**\n\n到手利潤率：**{t1_payout_rate:.1f}%**")
-    else:
-        st.error("設定過高，無法計算。")
-
-with tab2:
-    st.subheader("🔍 實際帳單與產品健康度檢測")
+    t1_total_c = t1
