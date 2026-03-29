@@ -2,7 +2,7 @@ import streamlit as st
 
 # 網頁基本設定
 st.set_page_config(page_title="Foodie Pricing", layout="wide")
-st.title("Foodie Pricing")
+st.title("🇸🇬 Foodie Pricing")
 
 # --- 第一部分：參數調節區 (左側邊欄) ---
 st.sidebar.header("⚙️ 全域參數設定")
@@ -39,42 +39,31 @@ with col1:
     st.write(f"➡️ 重量運費成本：**{weight_shipping_sgd:.2f} SGD**")
 
 with col2:
-    st.subheader("💰 其他成本與利潤")
+    st.subheader("💰 其他成本與利潤設定")
     miscellaneous_sgd = st.number_input("雜項固定支出 (SGD)", min_value=0.0, value=1.0, step=0.1)
     platform_fixed_shipping = 2.3  # 固定平台運費
-    target_margin = st.slider("期望獲利率 (%)", 5, 50, 20) / 100
+    target_margin = st.slider("預設獲利率 (%)", 5, 50, 20) / 100
 
 # --- 第三部分：計算結果 ---
 st.divider()
 
-# 總成本 (SGD) = 商品成本 + 重量運費 + 雜項 + 平台固定運費
-total_base_cost_sgd = cost_sgd + weight_shipping_sgd + miscellaneous_sgd + platform_fixed_shipping
+# 總基本成本 (C) = 商品成本 + 重量運費 + 雜項 + 平台固定運費
+total_c_sgd = cost_sgd + weight_shipping_sgd + miscellaneous_sgd + platform_fixed_shipping
 
-# 公式：售價 = 總成本 / (1 - 抽成率 - 獲利率)
+# 公式推導：售價 (SP) = C / (1 - 抽成率 - 獲利率)
 denominator = 1 - fee_rate - target_margin
 
 if denominator > 0:
-    final_price_sgd = total_base_cost_sgd / denominator
-    final_profit_sgd = final_price_sgd * target_margin
+    sp_sgd = total_c_sgd / denominator # 最終售價 (SP)
+    platform_fee_sgd = sp_sgd * fee_rate # 平台抽成金額
+    profit_sgd = sp_sgd * target_margin # 純利潤金額
     
-    result_col1, result_col2 = st.columns(2)
-    with result_col1:
-        st.success(f"### 🎯 建議售價：{final_price_sgd:.2f} SGD")
-        st.write(f"約合台幣：{final_price_sgd * exchange_rate:.0f} TWD")
+    # 你的需求：到手金額與利潤率
+    payout_sgd = sp_sgd - platform_fee_sgd # 到手金額 (SP - 平台費)
+    profit_rate = (profit_sgd / sp_sgd) * 100 # 利潤率 (利潤 / SP)
+    payout_profit_rate = ((payout_sgd - total_c_sgd) / payout_sgd) * 100 # 到手利潤率
     
-    with result_col2:
-        st.info(f"### 💵 每單純利：{final_profit_sgd:.2f} SGD")
-        st.write(f"平台抽成金額：{final_price_sgd * fee_rate:.2f} SGD")
-        
-    # 數據詳情展開 (注意這裡的縮進與括號)
-    with st.expander("查看成本結構詳情"):
-        st.write({
-            "商品成本 (SGD)": round(cost_sgd, 2),
-            "國際重量運費 (SGD)": round(weight_shipping_sgd, 2),
-            "平台固定運費 (SGD)": platform_fixed_shipping,
-            "雜項支出 (SGD)": miscellaneous_sgd,
-            "平台手續費 (SGD)": round(final_price_sgd * fee_rate, 2),
-            "預期利潤 (SGD)": round(final_profit_sgd, 2)
-        })
-else:
-    st.error("⚠️ 警告：抽成率與獲利率相加超過 100%，請重新調整參數。")
+    # 顯示主要數據
+    res1, res2, res3 = st.columns(3)
+    with res1:
+        st.success(f"### 🎯 建議售價 (SP)\n##
