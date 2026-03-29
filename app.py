@@ -38,4 +38,30 @@ with tab1:
         t1_target = st.slider("期望純利潤率 (%)", 5, 50, 20, key="t1_target") / 100
 
     st.divider()
-    t1_total_c = t1
+    # 這裡就是剛才出錯的地方，請確保這行完整
+    t1_total_c = t1_cost_sgd + t1_ship_sgd + t1_misc + shipping_gap_global
+    t1_denom = 1 - fee_rate - t1_target
+    
+    if t1_denom > 0:
+        t1_sp = t1_total_c / t1_denom
+        t1_fee = t1_sp * fee_rate
+        t1_payout = t1_sp - t1_fee - shipping_gap_global
+        
+        r1, r2, r3 = st.columns(3)
+        r1.success(f"### 🎯 建議售價\n## {t1_sp:.2f} SGD")
+        r2.info(f"### 💵 預估撥款\n## {t1_payout:.2f} SGD")
+        
+        t1_payout_rate = ((t1_payout - (t1_cost_sgd + t1_ship_sgd + t1_misc)) / t1_payout * 100) if t1_payout > 0 else 0
+        r3.warning(f"### 📈 利潤分析\n純利：**{t1_target*100:.1f}%**\n到手：**{t1_payout_rate:.1f}%**")
+    else:
+        st.error("設定過高，無法計算。")
+
+# === Tab 2: 帳單回測功能 ===
+with tab2:
+    st.subheader("🔍 實際帳單與產品健康度檢測")
+    c1, c2 = st.columns(2)
+    
+    with c1:
+        st.write("📖 **帳單數據 (必填)**")
+        check_sp = st.number_input("帳單 Item Price (售價)", value=11.80, key="t2_sp")
+        check_p
