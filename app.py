@@ -35,7 +35,6 @@ with tab1:
         t1_target = st.slider("期望純利潤率 (%)", 5, 50, 20, key="t1_target") / 100
 
     st.divider()
-    # 逆推公式
     t1_total_c = t1_cost_sgd + t1_ship_sgd + t1_misc + shipping_gap_global
     t1_denom = 1 - fee_rate - t1_target
     
@@ -43,14 +42,11 @@ with tab1:
         t1_sp = t1_total_c / t1_denom
         t1_fee = t1_sp * fee_rate
         t1_payout = t1_sp - t1_fee - shipping_gap_global
-        t1_profit = t1_sp * t1_target
         
-        # 顯示結果
         r1, r2, r3 = st.columns(3)
         r1.success(f"### 🎯 建議售價\n## {t1_sp:.2f} SGD")
         r2.info(f"### 💵 預估撥款\n## {t1_payout:.2f} SGD")
         
-        # 兩種利潤率
         t1_p_rate = t1_target * 100
         t1_payout_rate = ((t1_payout - (t1_cost_sgd + t1_ship_sgd + t1_misc)) / t1_payout * 100) if t1_payout > 0 else 0
         r3.warning(f"### 📈 利潤分析\n純利潤率：**{t1_p_rate:.1f}%**\n\n到手利潤率：**{t1_payout_rate:.1f}%**")
@@ -58,40 +54,4 @@ with tab1:
         st.error("設定過高，無法計算。")
 
 with tab2:
-    st.subheader("依據實際帳單拆解利潤")
-    c1, c2 = st.columns(2)
-    with c1:
-        check_sp = st.number_input("帳單上的 Item Price (售價)", value=11.80)
-        check_payout = st.number_input("帳單最後的 Grand Total (撥款)", value=7.76)
-    with c2:
-        check_cost_twd = st.number_input("該商品台幣原成本", value=150.0)
-        check_weight = st.number_input("該商品重量 (kg)", value=0.5)
-
-    # 帳單分析邏輯
-    check_cost_sgd = check_cost_twd / exchange_rate
-    check_ship_sgd = check_weight * shipping_rate_per_kg
-    check_total_base_cost = check_cost_sgd + check_ship_sgd + 0.5 # 假設雜項 0.5
-    
-    # 實際賺的錢 = 撥款 - (成本 + 運費成本 + 雜項)
-    actual_profit_val = check_payout - check_total_base_cost
-    
-    # 兩種利潤率回測
-    # 1. 純利潤率 = 實際利潤 / 售價
-    back_profit_rate = (actual_profit_val / check_sp) * 100
-    # 2. 到手利潤率 = (撥款 - 成本) / 撥款
-    back_payout_rate = ((check_payout - check_total_base_cost) / check_payout) * 100 if check_payout > 0 else 0
-    
-    st.divider()
-    res_col1, res_col2 = st.columns(2)
-    
-    with res_col1:
-        st.metric("實際純利金額", f"{actual_profit_val:.2f} SGD")
-        st.write(f"此單平台總扣款：**{check_sp - check_payout:.2f} SGD**")
-
-    with res_col2:
-        st.subheader("📈 帳單利潤率回測")
-        st.write(f"1. 純利潤率 (利潤/售價)： **{back_profit_rate:.1f}%**")
-        st.write(f"2. 到手利潤率 (利潤/撥款)： **{back_payout_rate:.1f}%**")
-        
-    if back_profit_rate < 0:
-        st.error("⚠️ 注意：這一單是虧損的！請檢查成本或運費差額。")
+    st.subheader("🔍 實際帳單與產品健康度檢測")
