@@ -1,7 +1,7 @@
 import streamlit as st
 
 # 網頁基本設定
-st.set_page_config(page_title="跨境電商定價工具", layout="wide")
+st.set_page_config(page_title="Foodie Pricing", layout="wide")
 st.title("Foodie Pricing Calculator 🍽️")
 
 # --- 第一部分：參數調節區 (左側邊欄) ---
@@ -67,9 +67,14 @@ if denominator > 0:
         st.write(f"平台抽成金額：{final_price_sgd * fee_rate:.2f} SGD")
         
     # 成本結構圓餅圖 (選配功能，新手可先參考數據)
-    st.expander("查看成本結構詳情").write({
-        "商品成本 (SGD)": round(cost_sgd, 2),
-        "國際重量運費 (SGD)": round(weight_shipping_sgd, 2),
-        "平台固定運費 (SGD)": platform_fixed_shipping,
-        "雜項支出 (SGD)": miscellaneous_sgd,
-        "平台手續費 (SGD)": round(
+# 數據詳情展開
+        st.expander("查看成本結構詳情").write({
+            "商品成本 (SGD)": round(cost_sgd, 2),
+            "國際重量運費 (SGD)": round(weight_shipping_sgd, 2),
+            "平台固定運費 (SGD)": platform_fixed_shipping,
+            "雜項支出 (SGD)": miscellaneous_sgd,
+            "平台手續費 (SGD)": round(final_price_sgd * fee_rate, 2),
+            "預期利潤 (SGD)": round(final_profit_sgd, 2)
+        }) # <--- 這裡必須有括號關閉 write
+    else:
+        st.error("⚠️ 警告：抽成率與獲利率相加超過 100%，請重新調整參數。")
