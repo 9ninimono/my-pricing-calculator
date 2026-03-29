@@ -37,4 +37,4 @@ with tab1:
     
     if t1_denom > 0:
         t1_sp = t1_total_c / t1_denom
-        t1_pay = t1_sp * (1 - f_rate
+        t1_pay = t1_sp * (1 - f_rate)
