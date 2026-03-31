@@ -4,13 +4,13 @@ import streamlit as st
 st.set_page_config(page_title="Foodie Pricing Calculator", layout="wide")
 st.title("Foodie Pricing Calculator 🍔")
 
-# 數學公式解析函數
-def parse_expression(expression):
+# 數學公式與數值解析函數 (確保輸入格式正確)
+def parse_val(expression):
     try:
+        # 清理字串，只允許數學運算字元
         allowed_chars = "0123456789+-*/.() "
-        if all(c in allowed_chars for c in str(expression)):
-            return float(eval(str(expression)))
-        return 0.0
+        clean_expr = "".join(c for c in str(expression) if c in allowed_chars)
+        return float(eval(clean_expr)) if clean_expr else 0.0
     except:
         return 0.0
 
@@ -18,7 +18,10 @@ def parse_expression(expression):
 st.sidebar.header("⚙️ 核心參數設定")
 ex_rate = st.sidebar.slider("即時匯率 (TWD/SGD)", 20.0, 26.0, 23.5, step=0.1)
 ship_kg_rate = st.sidebar.slider("重量運費成本 (SGD/kg)", 0.0, 20.0, 8.0, step=0.5)
-ship_gap_global = st.sidebar.number_input("賣家負擔運費差額 (SGD)", value=2.30, step=0.1)
+
+# 為了停用記憶，側邊欄數值輸入也改為 text_input
+ship_gap_raw = st.sidebar.text_input("賣家負擔運費差額 (SGD)", value="2.30", autocomplete="new-password")
+ship_gap_global = parse_val(ship_gap_raw)
 
 st.sidebar.divider()
 p_type = st.sidebar.radio("選擇計算平台", ["Shopee", "Lazada"])
@@ -33,10 +36,15 @@ with tab1:
     with col1:
         st.subheader("📦 成本輸入")
         t1_c_raw = st.text_input("商品台幣成本 (支援公式)", value="150.0", key="t1_c", autocomplete="new-password")
-        t1_c_twd = parse_expression(t1_c_raw)
-        st.caption(f"💡 計算結果：NT$ {t1_c_twd:.2f}")
-        t1_w = st.number_input("商品重量 (kg)", value=0.5, key="t1_w", min_value=None)
-        t1_m = st.number_input("雜項/包材 (SGD)", value=0.5, key="t1_m")
+        t1_c_twd = parse_val(t1_c_raw)
+        
+        t1_w_raw = st.text_input("商品重量 (kg)", value="0.5", key="t1_w", autocomplete="new-password")
+        t1_w = parse_val(t1_w_raw)
+        
+        t1_m_raw = st.text_input("雜項/包材 (SGD)", value="0.5", key="t1_m", autocomplete="new-password")
+        t1_m = parse_val(t1_m_raw)
+        
+        st.caption(f"💡 解析成本：NT$ {t1_c_twd:.2f} / 重量：{t1_w} kg")
         
         # 拆解成本用於毛利計算
         t1_item_only_cost = (t1_c_twd / ex_rate) + (t1_w * ship_kg_rate)
@@ -52,31 +60,24 @@ with tab1:
         sp = (base_cost + ship_gap_global) / denom
         payout = sp * (1 - f_rate) - ship_gap_global
         profit = payout - base_cost
-        
-        # 逆推毛利率：(預估撥款 - 商品本體成本) / 預估售價
         est_gross_margin = (payout - t1_item_only_cost) / sp * 100.0 if sp > 0 else 0.0
 
-        # 毛利率顯示區 (逆推版)
+        # 毛利率顯示區
         g_col1, g_col2 = st.columns([1, 2])
         with g_col1:
             st.metric("📊 預估毛利率", f"{est_gross_margin:.1f}%")
         with g_col2:
-            if est_gross_margin < 15.0:
-                st.error("❌ 毛利偏低：低於食品代購平均")
-            elif 15.0 <= est_gross_margin < 20.0:
-                st.warning("⚠️ 15%–20%：勉強可做 (食品正常基準)")
-            elif 20.0 <= est_gross_margin < 30.0:
-                st.success("✅ 20%–30%：健康 (具備競爭力)")
-            else:
-                st.info("🔥 30% 以上：很好 (高毛利商品)")
+            if est_gross_margin < 15.0: st.error("❌ 毛利偏低")
+            elif 15.0 <= est_gross_margin < 20.0: st.warning("⚠️ 15%–20%：勉強可做 (食品基準)")
+            elif 20.0 <= est_gross_margin < 30.0: st.success("✅ 20%–30%：健康")
+            else: st.info("🔥 30% 以上：很好")
 
         st.divider()
         r1, r2, r3 = st.columns(3)
         r1.success(f"### 🎯 建議售價\n## {sp:.2f} SGD")
         r2.info(f"### 💵 預估撥款\n## {payout:.2f} SGD")
         
-        pure_m = (profit / sp) * 100.0
-        hand_m = (profit / payout) * 100.0 if payout > 0 else 0.0
+        pure_m, hand_m = (profit / sp) * 100.0, (profit / payout) * 100.0 if payout > 0 else 0.0
         r3.warning(f"### 📈 利潤分析\n純利：**{pure_m:.1f}%**\n到手：**{hand_m:.1f}%**")
     else:
         st.error("⚠️ 設定過高，無法計算。")
@@ -86,42 +87,36 @@ with tab2:
     c1, c2 = st.columns(2)
     with c1:
         st.write("📖 **帳單數據**")
-        c_sp = st.number_input("帳單 Item Price (售價)", value=11.80, key="t2_sp")
-        c_pay = st.number_input("帳單 Grand Total (撥款)", value=7.76, key="t2_pay")
+        c_sp_raw = st.text_input("帳單 Item Price (售價)", value="11.80", key="t2_sp", autocomplete="new-password")
+        c_pay_raw = st.text_input("帳單 Grand Total (撥款)", value="7.76", key="t2_pay", autocomplete="new-password")
+        c_sp, c_pay = parse_val(c_sp_raw), parse_val(c_pay_raw)
     with c2:
         st.write("📦 **原始成本**")
         c_c_raw = st.text_input("商品台幣成本 (支援公式)", value="150.0", key="t2_ct", autocomplete="new-password")
-        c_c_twd = parse_expression(c_c_raw)
-        st.caption(f"💡 計算結果：NT$ {c_c_twd:.2f}")
-        c_w = st.number_input("商品重量 (kg)", value=0.5, key="t2_w", min_value=None)
-        c_m = st.number_input("雜項成本 (SGD)", value=0.5, key="t2_m")
+        c_c_twd = parse_val(c_c_raw)
+        c_w_raw = st.text_input("商品重量 (kg)", value="0.5", key="t2_w", autocomplete="new-password")
+        c_w = parse_val(c_w_raw)
+        c_m_raw = st.text_input("雜項成本 (SGD)", value="0.5", key="t2_m", autocomplete="new-password")
+        c_m = parse_val(c_m_raw)
 
     # 運算邏輯
     item_only_cost = (c_c_twd / ex_rate) + (c_w * ship_kg_rate)
     actual_base_cost = item_only_cost + c_m
     actual_profit = c_pay - actual_base_cost
-    
-    # 毛利率計算
     gross_margin = (c_pay - item_only_cost) / c_sp * 100.0 if c_sp > 0 else 0.0
-    
     b_p_margin = (actual_profit / c_sp) * 100.0 if c_sp > 0 else 0.0
     b_pay_margin = (actual_profit / c_pay) * 100.0 if c_pay > 0 else 0.0
     total_deduction = c_sp - c_pay
 
     st.divider()
-    # 毛利率顯示區 (回測版)
     g_col1, g_col2 = st.columns([1, 2])
     with g_col1:
         st.metric("📊 實際毛利率", f"{gross_margin:.1f}%")
     with g_col2:
-        if gross_margin < 15.0:
-            st.error("❌ 毛利偏低：低於食品代購平均")
-        elif 15.0 <= gross_margin < 20.0:
-            st.warning("⚠️ 15%–20%：勉強可做 (食品正常基準)")
-        elif 20.0 <= gross_margin < 30.0:
-            st.success("✅ 20%–30%：健康 (具備競爭力)")
-        else:
-            st.info("🔥 30% 以上：很好 (高毛利商品)")
+        if gross_margin < 15.0: st.error("❌ 毛利偏低")
+        elif 15.0 <= gross_margin < 20.0: st.warning("⚠️ 15%–20%：勉強可做")
+        elif 20.0 <= gross_margin < 30.0: st.success("✅ 20%–30%：健康")
+        else: st.info("🔥 30% 以上：很好")
 
     st.divider()
     res_l, res_m, res_r = st.columns(3)
@@ -132,7 +127,6 @@ with tab2:
         st.metric("此單總扣款 (含運)", f"{total_deduction:.2f} SGD")
         act_f_rate = ((total_deduction - ship_gap_global) / c_sp) * 100.0 if c_sp > 0 else 0.0
         st.write(f"反推實際抽成率: **{act_f_rate:.2f}%**")
-        st.write(f"基礎總成本: {actual_base_cost:.2f}")
     with res_r:
         st.metric("到手利潤率", f"{b_pay_margin:.1f}%")
         if b_pay_margin < 18.0: st.error("❌ 壓抑")
