@@ -4,13 +4,14 @@ import streamlit as st
 st.set_page_config(page_title="Foodie Pricing Calculator 🍔", layout="wide")
 st.title("Foodie Pricing Calculator 🍔")
 
-# 建立一個小工具函式來處理字串計算
+# 建立公式計算函式
 def parse_expression(expression):
     try:
-        # 只允許數字與算術符號，防止安全風險
         allowed_chars = "0123456789+-*/.() "
         if all(c in allowed_chars for c in str(expression)):
-            return float(eval(str(expression)))
+            # 避免除以 0 的錯誤
+            res = float(eval(str(expression)))
+            return res
         return 0.0
     except:
         return 0.0
@@ -23,8 +24,9 @@ ship_gap_global = st.sidebar.number_input("賣家負擔運費差額 (SGD)", valu
 
 st.sidebar.divider()
 p_type = st.sidebar.radio("選擇計算平台", ["Shopee", "Lazada"])
+# 這裡也統一使用 float 格式
 f_rate_raw = st.sidebar.slider(f"{p_type} 抽成率 (%)", 0.0, 30.0, 14.75, step=0.01)
-f_rate = f_rate_raw / 100
+f_rate = f_rate_raw / 100.0
 
 # --- 第二部分：功能頁籤 ---
 tab1, tab2 = st.tabs(["🚀 售價逆推", "📝 帳單回測"])
@@ -33,7 +35,6 @@ with tab1:
     col1, col2 = st.columns(2)
     with col1:
         st.subheader("📦 成本輸入")
-        # 改為 text_input 支援公式
         t1_c_raw = st.text_input("商品台幣成本 (可輸入公式如 180/3)", value="150", key="t1_c_raw")
         t1_c_twd = parse_expression(t1_c_raw)
         st.caption(f"計算結果：NT$ {t1_c_twd:.2f}")
@@ -45,22 +46,23 @@ with tab1:
         
     with col2:
         st.subheader("💰 獲利目標")
-        t1_target_p = st.slider("期望純利潤率 (%)", 5, 50, 13.0, key="t1_t") / 100
+        # 【修正處】將 5 改為 5.0, 50 改為 50.0 確保型別一致
+        t1_target_p = st.slider("期望純利潤率 (%)", 5.0, 50.0, 13.0, key="t1_t") / 100.0
 
     st.divider()
-    denom = 1 - f_rate - t1_target_p
+    denom = 1.0 - f_rate - t1_target_p
     
     if denom > 0:
         sp = (base_cost + ship_gap_global) / denom
-        payout = sp * (1 - f_rate) - ship_gap_global
+        payout = sp * (1.0 - f_rate) - ship_gap_global
         profit = payout - base_cost
         
         r1, r2, r3 = st.columns(3)
         r1.success(f"### 🎯 建議售價\n## {sp:.2f} SGD")
         r2.info(f"### 💵 預估撥款\n## {payout:.2f} SGD")
         
-        pure_m = (profit / sp) * 100
-        hand_m = (profit / payout) * 100 if payout > 0 else 0
+        pure_m = (profit / sp) * 100.0
+        hand_m = (profit / payout) * 100.0 if payout > 0 else 0.0
         r3.warning(f"### 📈 利潤分析\n純利：**{pure_m:.1f}%**\n到手：**{hand_m:.1f}%**")
     else:
         st.error("⚠️ 設定過高，請降低利潤率。")
@@ -74,7 +76,6 @@ with tab2:
         c_pay = st.number_input("帳單 Grand Total (撥款)", value=7.76, key="t2_pay")
     with c2:
         st.write("📦 **原始成本**")
-        # 改為 text_input 支援公式
         c_c_raw = st.text_input("商品台幣成本 (可輸入公式)", value="150", key="t2_c_raw")
         c_c_twd = parse_expression(c_c_raw)
         st.caption(f"計算結果：NT$ {c_c_twd:.2f}")
@@ -85,26 +86,20 @@ with tab2:
     actual_base_cost = (c_c_twd / ex_rate) + (c_w * ship_kg_rate) + c_m
     actual_profit = c_pay - actual_base_cost
     
-    b_p_margin = (actual_profit / c_sp) * 100 if c_sp > 0 else 0
-    b_pay_margin = (actual_profit / c_pay) * 100 if c_pay > 0 else 0
+    b_p_margin = (actual_profit / c_sp) * 100.0 if c_sp > 0 else 0.0
+    b_pay_margin = (actual_profit / c_pay) * 100.0 if c_pay > 0 else 0.0
     
     st.divider()
     res_l, res_m, res_r = st.columns(3)
     with res_l:
         st.metric("實際純利金額", f"{actual_profit:.2f} SGD")
         st.write(f"### ✅ 純利潤率：**{b_p_margin:.1f}%**")
-        if b_p_margin < 15: st.error("❌ 警告：利潤過低")
-        elif 15 <= b_p_margin <= 25: st.success("✅ 健康")
+        if b_p_margin < 15.0: st.error("❌ 警告：利潤過低")
+        elif 15.0 <= b_p_margin <= 25.0: st.success("✅ 健康")
         else: st.info("🔥 優秀")
 
     with res_m:
-        act_f_rate = ((c_sp - c_pay - ship_gap_global) / c_sp) * 100 if c_sp > 0 else 0
+        act_f_rate = ((c_sp - c_pay - ship_gap_global) / c_sp) * 100.0 if c_sp > 0 else 0.0
         st.metric("反推實際抽成率", f"{act_f_rate:.2f}%")
         st.write(f"基礎總成本: {actual_base_cost:.2f}")
-        st.caption(f"平台扣款: {(c_sp - c_pay - ship_gap_global):.2f}")
-
-    with res_r:
-        st.metric("到手利潤率", f"{b_pay_margin:.1f}%")
-        if b_pay_margin < 18: st.error("❌ 壓抑")
-        elif 18 <= b_pay_margin <= 30: st.success("✅ 正常")
-        else: st.info("🔥 很舒服")
+        st.caption(f"平台扣款:
