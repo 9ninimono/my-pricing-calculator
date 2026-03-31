@@ -37,7 +37,11 @@ with tab1:
         st.caption(f"💡 計算結果：NT$ {t1_c_twd:.2f}")
         t1_w = st.number_input("商品重量 (kg)", value=0.5, key="t1_w", min_value=None)
         t1_m = st.number_input("雜項/包材 (SGD)", value=0.5, key="t1_m")
-        base_cost = (t1_c_twd / ex_rate) + (t1_w * ship_kg_rate) + t1_m
+        
+        # 拆解成本用於毛利計算
+        t1_item_only_cost = (t1_c_twd / ex_rate) + (t1_w * ship_kg_rate)
+        base_cost = t1_item_only_cost + t1_m
+        
     with col2:
         st.subheader("💰 獲利目標")
         t1_target_p = st.slider("期望純利潤率 (%)", 5.0, 50.0, 13.0, key="t1_t") / 100.0
@@ -46,12 +50,33 @@ with tab1:
     denom = 1.0 - f_rate - t1_target_p
     if denom > 0:
         sp = (base_cost + ship_gap_global) / denom
-        payout = sp * (1.0 - f_rate) - ship_gap_global
+        payout = sp * (1 - f_rate) - ship_gap_global
         profit = payout - base_cost
+        
+        # 逆推毛利率：(預估撥款 - 商品本體成本) / 預估售價
+        est_gross_margin = (payout - t1_item_only_cost) / sp * 100.0 if sp > 0 else 0.0
+
+        # 毛利率顯示區 (逆推版)
+        g_col1, g_col2 = st.columns([1, 2])
+        with g_col1:
+            st.metric("📊 預估毛利率", f"{est_gross_margin:.1f}%")
+        with g_col2:
+            if est_gross_margin < 15.0:
+                st.error("❌ 毛利偏低：低於食品代購平均")
+            elif 15.0 <= est_gross_margin < 20.0:
+                st.warning("⚠️ 15%–20%：勉強可做 (食品正常基準)")
+            elif 20.0 <= est_gross_margin < 30.0:
+                st.success("✅ 20%–30%：健康 (具備競爭力)")
+            else:
+                st.info("🔥 30% 以上：很好 (高毛利商品)")
+
+        st.divider()
         r1, r2, r3 = st.columns(3)
         r1.success(f"### 🎯 建議售價\n## {sp:.2f} SGD")
         r2.info(f"### 💵 預估撥款\n## {payout:.2f} SGD")
-        pure_m, hand_m = (profit / sp) * 100.0, (profit / payout) * 100.0 if payout > 0 else 0.0
+        
+        pure_m = (profit / sp) * 100.0
+        hand_m = (profit / payout) * 100.0 if payout > 0 else 0.0
         r3.warning(f"### 📈 利潤分析\n純利：**{pure_m:.1f}%**\n到手：**{hand_m:.1f}%**")
     else:
         st.error("⚠️ 設定過高，無法計算。")
@@ -84,7 +109,7 @@ with tab2:
     total_deduction = c_sp - c_pay
 
     st.divider()
-    # 毛利率專屬顯示區 (已對齊食品代購標準)
+    # 毛利率顯示區 (回測版)
     g_col1, g_col2 = st.columns([1, 2])
     with g_col1:
         st.metric("📊 實際毛利率", f"{gross_margin:.1f}%")
