@@ -58,7 +58,7 @@ with tab1:
         st.error("⚠️ 設定過高，請降低利潤率。")
 
 with tab2:
-    st.subheader("🔍 帳單健康度驗收")
+    st.subheader("🔍 帳單健康度驗送")
     c1, c2 = st.columns(2)
     with c1:
         st.write("📖 **帳單數據**")
@@ -73,32 +73,14 @@ with tab2:
         c_m = st.number_input("雜項成本 (SGD)", value=0.5, key="t2_m")
 
     # 運算邏輯
-    actual_base_cost = (c_c_twd / ex_rate) + (c_w * ship_kg_rate) + c_m
+    # 商品基礎成本 (不含雜項包材，僅含商品本身與運費)
+    item_only_cost = (c_c_twd / ex_rate) + (c_w * ship_kg_rate)
+    actual_base_cost = item_only_cost + c_m
     actual_profit = c_pay - actual_base_cost
+    
+    # 毛利率計算：(撥款 - 商品與運費成本) / 售價
+    gross_margin = (c_pay - item_only_cost) / c_sp * 100.0 if c_sp > 0 else 0.0
+    
     b_p_margin = (actual_profit / c_sp) * 100.0 if c_sp > 0 else 0.0
     b_pay_margin = (actual_profit / c_pay) * 100.0 if c_pay > 0 else 0.0
-    
-    # 總扣款計算：售價 - 撥款 (這包含抽成與運費差額)
     total_deduction = c_sp - c_pay
-
-    st.divider()
-    res_l, res_m, res_r = st.columns(3)
-    with res_l:
-        st.metric("實際純利金額", f"{actual_profit:.2f} SGD")
-        st.write(f"### ✅ 純利潤率：**{b_p_margin:.1f}%**")
-        if b_p_margin < 15.0: st.error("❌ 警告：利潤過低")
-        elif 15.0 <= b_p_margin <= 25.0: st.success("✅ 健康")
-        else: st.info("🔥 優秀")
-
-    with res_m:
-        st.metric("此單總扣款 (含運)", f"{total_deduction:.2f} SGD")
-        # 反推實際抽成率 (排除運費差額後的百分比)
-        act_f_rate = ((total_deduction - ship_gap_global) / c_sp) * 100.0 if c_sp > 0 else 0.0
-        st.write(f"反推實際抽成率: **{act_f_rate:.2f}%**")
-        st.write(f"基礎總成本: {actual_base_cost:.2f}")
-
-    with res_r:
-        st.metric("到手利潤率", f"{b_pay_margin:.1f}%")
-        if b_pay_margin < 18.0: st.error("❌ 壓抑")
-        elif 18.0 <= b_pay_margin <= 30.0: st.success("✅ 正常")
-        else: st.info("🔥 很舒服")
