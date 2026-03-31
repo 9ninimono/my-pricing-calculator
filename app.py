@@ -104,3 +104,12 @@ with tab2:
         st.metric("實際純利金額", f"{actual_profit:.2f} SGD")
         st.write(f"純利潤率：**{b_p_margin:.1f}%**")
     with res_m:
+        st.metric("此單總扣款 (含運)", f"{total_deduction:.2f} SGD")
+        act_f_rate = ((total_deduction - ship_gap_global) / c_sp) * 100.0 if c_sp > 0 else 0.0
+        st.write(f"反推實際抽成率: **{act_f_rate:.2f}%**")
+        st.write(f"基礎總成本: {actual_base_cost:.2f}")
+    with res_r:
+        st.metric("到手利潤率", f"{b_pay_margin:.1f}%")
+        if b_pay_margin < 18.0: st.error("❌ 壓抑")
+        elif 18.0 <= b_pay_margin <= 30.0: st.success("✅ 正常")
+        else: st.info("🔥 很舒服")
