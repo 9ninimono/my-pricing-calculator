@@ -1,7 +1,7 @@
 import streamlit as st
 
 # 1. 網頁基本設定
-st.set_page_config(page_title="Foodie Pricing Calculator 🍔", layout="wide")
+st.set_page_config(page_title="Foodie Pricing Calculator", layout="wide")
 st.title("Foodie Pricing Calculator 🍔")
 
 # 建立公式計算函式
@@ -9,7 +9,6 @@ def parse_expression(expression):
     try:
         allowed_chars = "0123456789+-*/.() "
         if all(c in allowed_chars for c in str(expression)):
-            # 避免除以 0 的錯誤
             res = float(eval(str(expression)))
             return res
         return 0.0
@@ -24,7 +23,6 @@ ship_gap_global = st.sidebar.number_input("賣家負擔運費差額 (SGD)", valu
 
 st.sidebar.divider()
 p_type = st.sidebar.radio("選擇計算平台", ["Shopee", "Lazada"])
-# 這裡也統一使用 float 格式
 f_rate_raw = st.sidebar.slider(f"{p_type} 抽成率 (%)", 0.0, 30.0, 14.75, step=0.01)
 f_rate = f_rate_raw / 100.0
 
@@ -35,7 +33,7 @@ with tab1:
     col1, col2 = st.columns(2)
     with col1:
         st.subheader("📦 成本輸入")
-        t1_c_raw = st.text_input("商品台幣成本 (可輸入公式如 180/3)", value="150", key="t1_c_raw")
+        t1_c_raw = st.text_input("商品台幣成本 (可輸入公式)", value="150", key="t1_c_raw")
         t1_c_twd = parse_expression(t1_c_raw)
         st.caption(f"計算結果：NT$ {t1_c_twd:.2f}")
         
@@ -46,7 +44,6 @@ with tab1:
         
     with col2:
         st.subheader("💰 獲利目標")
-        # 【修正處】將 5 改為 5.0, 50 改為 50.0 確保型別一致
         t1_target_p = st.slider("期望純利潤率 (%)", 5.0, 50.0, 13.0, key="t1_t") / 100.0
 
     st.divider()
@@ -99,7 +96,5 @@ with tab2:
         else: st.info("🔥 優秀")
 
     with res_m:
-        act_f_rate = ((c_sp - c_pay - ship_gap_global) / c_sp) * 100.0 if c_sp > 0 else 0.0
-        st.metric("反推實際抽成率", f"{act_f_rate:.2f}%")
-        st.write(f"基礎總成本: {actual_base_cost:.2f}")
-        st.caption(f"平台扣款:
+        fee_amt = (c_sp - c_pay - ship_gap_global)
+        act_f_rate = (fee_amt / c_sp) * 100.0 if c_sp > 0 else
