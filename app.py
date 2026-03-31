@@ -4,7 +4,7 @@ import streamlit as st
 st.set_page_config(page_title="Foodie Pricing Calculator", layout="wide")
 st.title("Foodie Pricing Calculator 🍔")
 
-# 建立公式計算函式
+# 建立公式計算函式 (支援 180/3 這種輸入)
 def parse_expression(expression):
     try:
         allowed_chars = "0123456789+-*/.() "
@@ -15,7 +15,7 @@ def parse_expression(expression):
     except:
         return 0.0
 
-# --- 第一部分：側邊欄參數 ---
+# --- 第一部分：側邊欄參數 (全域共用) ---
 st.sidebar.header("⚙️ 核心參數設定")
 ex_rate = st.sidebar.slider("即時匯率 (TWD/SGD)", 20.0, 26.0, 23.5, step=0.1)
 ship_kg_rate = st.sidebar.slider("重量運費成本 (SGD/kg)", 0.0, 20.0, 8.0, step=0.5)
@@ -29,7 +29,7 @@ f_rate = f_rate_raw / 100.0
 # --- 第二部分：功能頁籤 ---
 tab1, tab2 = st.tabs(["🚀 售價逆推", "📝 帳單回測"])
 
-# === Tab 1: 售價逆推 ===
+# === Tab 1: 售價逆推 (我要標多少錢？) ===
 with tab1:
     col1, col2 = st.columns(2)
     with col1:
@@ -41,6 +41,7 @@ with tab1:
         t1_w = st.number_input("商品重量 (kg)", value=0.5, key="t1_w")
         t1_m = st.number_input("雜項/包材 (SGD)", value=0.5, key="t1_m")
         
+        # 基礎成本 = (台幣/匯率) + 重量運費 + 雜項
         base_cost = (t1_c_twd / ex_rate) + (t1_w * ship_kg_rate) + t1_m
         
     with col2:
@@ -48,6 +49,7 @@ with tab1:
         t1_target_p = st.slider("期望純利潤率 (%)", 5.0, 50.0, 13.0, key="t1_t") / 100.0
 
     st.divider()
+    # 逆推公式
     denom = 1.0 - f_rate - t1_target_p
     
     if denom > 0:
@@ -65,11 +67,6 @@ with tab1:
     else:
         st.error("⚠️ 設定過高，請降低利潤率。")
 
-# === Tab 2: 帳單回測 ===
+# === Tab 2: 帳單回測 (這單賺多少錢？) ===
 with tab2:
     st.subheader("🔍 帳單健康度驗收")
-    c1, c2 = st.columns(2)
-    with c1:
-        st.write("📖 **帳單數據**")
-        c_sp = st.number_input("帳單 Item Price (售價)", value=11.80, key="t2_sp")
-        c_pay = st.number_input("帳單 Grand Total (撥款)", value=7.76, key="t2_pay")
