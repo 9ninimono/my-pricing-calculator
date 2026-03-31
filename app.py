@@ -29,6 +29,7 @@ f_rate = f_rate_raw / 100.0
 # --- 第二部分：功能頁籤 ---
 tab1, tab2 = st.tabs(["🚀 售價逆推", "📝 帳單回測"])
 
+# === Tab 1: 售價逆推 ===
 with tab1:
     col1, col2 = st.columns(2)
     with col1:
@@ -62,8 +63,9 @@ with tab1:
         hand_m = (profit / payout) * 100.0 if payout > 0 else 0.0
         r3.warning(f"### 📈 利潤分析\n純利：**{pure_m:.1f}%**\n到手：**{hand_m:.1f}%**")
     else:
-        st.error("⚠️ 設定過高，請降低利潤率。")
+        st.error("⚠️ 設定過高，無法計算。")
 
+# === Tab 2: 帳單回測 ===
 with tab2:
     st.subheader("🔍 帳單健康度驗收")
     c1, c2 = st.columns(2)
@@ -80,6 +82,7 @@ with tab2:
         c_w = st.number_input("商品重量 (kg)", value=0.5, key="t2_w")
         c_m = st.number_input("雜項成本 (SGD)", value=0.5, key="t2_m")
 
+    # 運算邏輯
     actual_base_cost = (c_c_twd / ex_rate) + (c_w * ship_kg_rate) + c_m
     actual_profit = c_pay - actual_base_cost
     
@@ -92,9 +95,4 @@ with tab2:
         st.metric("實際純利金額", f"{actual_profit:.2f} SGD")
         st.write(f"### ✅ 純利潤率：**{b_p_margin:.1f}%**")
         if b_p_margin < 15.0: st.error("❌ 警告：利潤過低")
-        elif 15.0 <= b_p_margin <= 25.0: st.success("✅ 健康")
-        else: st.info("🔥 優秀")
-
-    with res_m:
-        fee_amt = (c_sp - c_pay - ship_gap_global)
-        act_f_rate = (fee_amt / c_sp) * 100.0 if c_sp > 0 else
+        elif 15.0 <= b_p_margin
