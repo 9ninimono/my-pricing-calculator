@@ -4,11 +4,21 @@ import streamlit as st
 st.set_page_config(page_title="Foodie Pricing Calculator 🍔", layout="wide")
 st.title("Foodie Pricing Calculator 🍔")
 
-# --- 第一部分：側邊欄參數 (全域共用) ---
+# 建立一個小工具函式來處理字串計算
+def parse_expression(expression):
+    try:
+        # 只允許數字與算術符號，防止安全風險
+        allowed_chars = "0123456789+-*/.() "
+        if all(c in allowed_chars for c in str(expression)):
+            return float(eval(str(expression)))
+        return 0.0
+    except:
+        return 0.0
+
+# --- 第一部分：側邊欄參數 ---
 st.sidebar.header("⚙️ 核心參數設定")
 ex_rate = st.sidebar.slider("即時匯率 (TWD/SGD)", 20.0, 26.0, 23.5, step=0.1)
 ship_kg_rate = st.sidebar.slider("重量運費成本 (SGD/kg)", 0.0, 20.0, 8.0, step=0.5)
-# 這是你帳單中的 4.29 - 1.99 = 2.3
 ship_gap_global = st.sidebar.number_input("賣家負擔運費差額 (SGD)", value=2.30, step=0.1)
 
 st.sidebar.divider()
@@ -23,25 +33,25 @@ with tab1:
     col1, col2 = st.columns(2)
     with col1:
         st.subheader("📦 成本輸入")
-        t1_c_twd = st.number_input("商品台幣成本", value=150.0, key="t1_c")
+        # 改為 text_input 支援公式
+        t1_c_raw = st.text_input("商品台幣成本 (可輸入公式如 180/3)", value="150", key="t1_c_raw")
+        t1_c_twd = parse_expression(t1_c_raw)
+        st.caption(f"計算結果：NT$ {t1_c_twd:.2f}")
+        
         t1_w = st.number_input("商品重量 (kg)", value=0.5, key="t1_w")
         t1_m = st.number_input("雜項/包材 (SGD)", value=0.5, key="t1_m")
         
-        # 這是你的「口袋支出」成本
         base_cost = (t1_c_twd / ex_rate) + (t1_w * ship_kg_rate) + t1_m
         
     with col2:
         st.subheader("💰 獲利目標")
-        # 這裡的純利潤率定義：利潤 / 售價
         t1_target_p = st.slider("期望純利潤率 (%)", 5, 50, 13.0, key="t1_t") / 100
 
     st.divider()
-    # 【對齊公式】SP = (基礎成本 + 運費差額) / (1 - 抽成率 - 純利率)
     denom = 1 - f_rate - t1_target_p
     
     if denom > 0:
         sp = (base_cost + ship_gap_global) / denom
-        # 撥款 = 售價 - (售價 * 抽成率) - 運費差額
         payout = sp * (1 - f_rate) - ship_gap_global
         profit = payout - base_cost
         
@@ -49,7 +59,6 @@ with tab1:
         r1.success(f"### 🎯 建議售價\n## {sp:.2f} SGD")
         r2.info(f"### 💵 預估撥款\n## {payout:.2f} SGD")
         
-        # 這裡計算出來的純利潤率必須等於你的 slider 設定值
         pure_m = (profit / sp) * 100
         hand_m = (profit / payout) * 100 if payout > 0 else 0
         r3.warning(f"### 📈 利潤分析\n純利：**{pure_m:.1f}%**\n到手：**{hand_m:.1f}%**")
@@ -65,17 +74,17 @@ with tab2:
         c_pay = st.number_input("帳單 Grand Total (撥款)", value=7.76, key="t2_pay")
     with c2:
         st.write("📦 **原始成本**")
-        c_c_twd = st.number_input("商品台幣成本", value=150.0, key="t2_ct")
+        # 改為 text_input 支援公式
+        c_c_raw = st.text_input("商品台幣成本 (可輸入公式)", value="150", key="t2_c_raw")
+        c_c_twd = parse_expression(c_c_raw)
+        st.caption(f"計算結果：NT$ {c_c_twd:.2f}")
+        
         c_w = st.number_input("商品重量 (kg)", value=0.5, key="t2_w")
         c_m = st.number_input("雜項成本 (SGD)", value=0.5, key="t2_m")
 
-    # 【對齊運算】
-    # 1. 算出你的基礎總成本 (商品+重量運費+包材)
     actual_base_cost = (c_c_twd / ex_rate) + (c_w * ship_kg_rate) + c_m
-    # 2. 實際獲利 = 撥款 - 基礎總成本
     actual_profit = c_pay - actual_base_cost
     
-    # 3. 利潤率計算 (分母完全對齊)
     b_p_margin = (actual_profit / c_sp) * 100 if c_sp > 0 else 0
     b_pay_margin = (actual_profit / c_pay) * 100 if c_pay > 0 else 0
     
@@ -89,8 +98,6 @@ with tab2:
         else: st.info("🔥 優秀")
 
     with res_m:
-        # 反推實際抽成率 (排除掉運費差額後的淨抽成)
-        # 公式：(售價 - 撥款 - 運費差額) / 售價
         act_f_rate = ((c_sp - c_pay - ship_gap_global) / c_sp) * 100 if c_sp > 0 else 0
         st.metric("反推實際抽成率", f"{act_f_rate:.2f}%")
         st.write(f"基礎總成本: {actual_base_cost:.2f}")
