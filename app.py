@@ -84,3 +84,32 @@ with tab2:
     b_p_margin = (actual_profit / c_sp) * 100.0 if c_sp > 0 else 0.0
     b_pay_margin = (actual_profit / c_pay) * 100.0 if c_pay > 0 else 0.0
     total_deduction = c_sp - c_pay
+
+    st.divider()
+    # 增加一行專門顯示毛利率
+    g_col1, g_col2 = st.columns([1, 2])
+    with g_col1:
+        st.metric("📊 實際毛利率", f"{gross_margin:.1f}%")
+    with g_col2:
+        if gross_margin < 30.0:
+            st.error("❌ 毛利極低：虧損風險高")
+        elif 30.0 <= gross_margin < 40.0:
+            st.warning("⚠️ 勉強可做：需嚴格控管雜支")
+        elif 40.0 <= gross_margin < 50.0:
+            st.success("✅ 健康：符合營運標準")
+        else:
+            st.info("🔥 很好：具備高度競爭力")
+
+    st.divider()
+    res_l, res_m, res_r = st.columns(3)
+    with res_l:
+        st.metric("實際純利金額", f"{actual_profit:.2f} SGD")
+        st.write(f"純利潤率：**{b_p_margin:.1f}%**")
+    with res_m:
+        st.metric("此單總扣款 (含運)", f"{total_deduction:.2f} SGD")
+        act_f_rate = ((total_deduction - ship_gap_global) / c_sp) * 100.0 if c_sp > 0 else 0.0
+        st.write(f"反推實際抽成率: **{act_f_rate:.2f}%**")
+    with res_r:
+        st.metric("到手利潤率", f"{b_pay_margin:.1f}%")
+        if b_pay_margin < 18.0: st.error("❌ 壓抑")
+        else: st.info("🔥 很舒服")
