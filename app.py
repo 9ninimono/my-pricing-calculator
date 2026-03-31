@@ -63,7 +63,7 @@ with tab1:
         hand_m = (profit / payout) * 100.0 if payout > 0 else 0.0
         r3.warning(f"### 📈 利潤分析\n純利：**{pure_m:.1f}%**\n到手：**{hand_m:.1f}%**")
     else:
-        st.error("⚠️ 設定過高，無法計算。")
+        st.error("⚠️ 設定過高，請降低利潤率。")
 
 # === Tab 2: 帳單回測 ===
 with tab2:
@@ -73,26 +73,3 @@ with tab2:
         st.write("📖 **帳單數據**")
         c_sp = st.number_input("帳單 Item Price (售價)", value=11.80, key="t2_sp")
         c_pay = st.number_input("帳單 Grand Total (撥款)", value=7.76, key="t2_pay")
-    with c2:
-        st.write("📦 **原始成本**")
-        c_c_raw = st.text_input("商品台幣成本 (可輸入公式)", value="150", key="t2_c_raw")
-        c_c_twd = parse_expression(c_c_raw)
-        st.caption(f"計算結果：NT$ {c_c_twd:.2f}")
-        
-        c_w = st.number_input("商品重量 (kg)", value=0.5, key="t2_w")
-        c_m = st.number_input("雜項成本 (SGD)", value=0.5, key="t2_m")
-
-    # 運算邏輯
-    actual_base_cost = (c_c_twd / ex_rate) + (c_w * ship_kg_rate) + c_m
-    actual_profit = c_pay - actual_base_cost
-    
-    b_p_margin = (actual_profit / c_sp) * 100.0 if c_sp > 0 else 0.0
-    b_pay_margin = (actual_profit / c_pay) * 100.0 if c_pay > 0 else 0.0
-    
-    st.divider()
-    res_l, res_m, res_r = st.columns(3)
-    with res_l:
-        st.metric("實際純利金額", f"{actual_profit:.2f} SGD")
-        st.write(f"### ✅ 純利潤率：**{b_p_margin:.1f}%**")
-        if b_p_margin < 15.0: st.error("❌ 警告：利潤過低")
-        elif 15.0 <= b_p_margin
