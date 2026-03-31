@@ -4,10 +4,10 @@ import streamlit as st
 st.set_page_config(page_title="Foodie Pricing Calculator", layout="wide")
 st.title("Foodie Pricing Calculator 🍔")
 
-# 數學公式與數值解析函數 (確保輸入格式正確)
+# 數學公式與數值解析函數 (全介面共用)
 def parse_val(expression):
     try:
-        # 清理字串，只允許數學運算字元
+        # 清理字串，只允許數字、算術符號與括號
         allowed_chars = "0123456789+-*/.() "
         clean_expr = "".join(c for c in str(expression) if c in allowed_chars)
         return float(eval(clean_expr)) if clean_expr else 0.0
@@ -19,7 +19,7 @@ st.sidebar.header("⚙️ 核心參數設定")
 ex_rate = st.sidebar.slider("即時匯率 (TWD/SGD)", 20.0, 26.0, 23.5, step=0.1)
 ship_kg_rate = st.sidebar.slider("重量運費成本 (SGD/kg)", 0.0, 20.0, 8.0, step=0.5)
 
-# 為了停用記憶，側邊欄數值輸入也改為 text_input
+# 停用記憶：側邊欄數值輸入
 ship_gap_raw = st.sidebar.text_input("賣家負擔運費差額 (SGD)", value="2.30", autocomplete="new-password")
 ship_gap_global = parse_val(ship_gap_raw)
 
@@ -35,23 +35,27 @@ with tab1:
     col1, col2 = st.columns(2)
     with col1:
         st.subheader("📦 成本輸入")
+        # 成本支援公式
         t1_c_raw = st.text_input("商品台幣成本 (支援公式)", value="150.0", key="t1_c", autocomplete="new-password")
         t1_c_twd = parse_val(t1_c_raw)
         
-        t1_w_raw = st.text_input("商品重量 (kg)", value="0.5", key="t1_w", autocomplete="new-password")
+        # 強化：重量也支援公式 (例如 0.3+0.2)
+        t1_w_raw = st.text_input("商品重量 (kg) (支援公式)", value="0.5", key="t1_w", autocomplete="new-password")
         t1_w = parse_val(t1_w_raw)
         
         t1_m_raw = st.text_input("雜項/包材 (SGD)", value="0.5", key="t1_m", autocomplete="new-password")
         t1_m = parse_val(t1_m_raw)
         
-        st.caption(f"💡 解析成本：NT$ {t1_c_twd:.2f} / 重量：{t1_w} kg")
+        st.caption(f"💡 解析結果：成本 NT$ {t1_c_twd:.2f} / 重量 {t1_w:.3f} kg")
         
-        # 拆解成本用於毛利計算
+        # 成本拆解
         t1_item_only_cost = (t1_c_twd / ex_rate) + (t1_w * ship_kg_rate)
         base_cost = t1_item_only_cost + t1_m
         
     with col2:
         st.subheader("💰 獲利目標")
+        t1_target_p = st.sidebar.slider("期望純利潤率 (%)", 5.0, 50.0, 13.0, key="t1_t_slider") / 100.0 if "t1_t_slider" in st.session_state else 0.13
+        # 這裡為了維持版面美觀，保留 slider 在原位
         t1_target_p = st.slider("期望純利潤率 (%)", 5.0, 50.0, 13.0, key="t1_t") / 100.0
 
     st.divider()
@@ -62,7 +66,7 @@ with tab1:
         profit = payout - base_cost
         est_gross_margin = (payout - t1_item_only_cost) / sp * 100.0 if sp > 0 else 0.0
 
-        # 毛利率顯示區
+        # 毛利率顯示區 (售價逆推)
         g_col1, g_col2 = st.columns([1, 2])
         with g_col1:
             st.metric("📊 預估毛利率", f"{est_gross_margin:.1f}%")
@@ -87,15 +91,18 @@ with tab2:
     c1, c2 = st.columns(2)
     with c1:
         st.write("📖 **帳單數據**")
-        c_sp_raw = st.text_input("帳單 Item Price (售價)", value="11.80", key="t2_sp", autocomplete="new-password")
-        c_pay_raw = st.text_input("帳單 Grand Total (撥款)", value="7.76", key="t2_pay", autocomplete="new-password")
+        c_sp_raw = st.text_input("帳單售價 (Item Price)", value="11.80", key="t2_sp", autocomplete="new-password")
+        c_pay_raw = st.text_input("帳單撥款 (Grand Total)", value="7.76", key="t2_pay", autocomplete="new-password")
         c_sp, c_pay = parse_val(c_sp_raw), parse_val(c_pay_raw)
     with c2:
         st.write("📦 **原始成本**")
         c_c_raw = st.text_input("商品台幣成本 (支援公式)", value="150.0", key="t2_ct", autocomplete="new-password")
         c_c_twd = parse_val(c_c_raw)
-        c_w_raw = st.text_input("商品重量 (kg)", value="0.5", key="t2_w", autocomplete="new-password")
+        
+        # 強化：回測重量也支援公式
+        c_w_raw = st.text_input("商品重量 (kg) (支援公式)", value="0.5", key="t2_w", autocomplete="new-password")
         c_w = parse_val(c_w_raw)
+        
         c_m_raw = st.text_input("雜項成本 (SGD)", value="0.5", key="t2_m", autocomplete="new-password")
         c_m = parse_val(c_m_raw)
 
@@ -109,6 +116,7 @@ with tab2:
     total_deduction = c_sp - c_pay
 
     st.divider()
+    # 毛利率顯示區 (帳單回測)
     g_col1, g_col2 = st.columns([1, 2])
     with g_col1:
         st.metric("📊 實際毛利率", f"{gross_margin:.1f}%")
